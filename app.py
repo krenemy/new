@@ -491,6 +491,6 @@ if __name__ == '__main__':
     # Ensure the OAuth callback URI is set correctly
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # For development only, allows HTTP
     
-    app.run('localhost', 3002, debug=True)
+    app.run('localhost', os.getenv('PORT'), debug=True)
 
 
