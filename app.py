@@ -397,7 +397,7 @@ def login():
                 "token_uri": os.getenv('TOKEN_URI'),
                 "auth_provider_x509_cert_url": os.getenv('AUTH_PROVIDER_X509_CERT_URL'),
                 "client_secret": os.getenv('GOOGLE_CLIENT_SECRET'),
-                "redirect_uris": [os.getenv('REDIRECT_URIS')]
+                "redirect_uri": [os.getenv('REDIRECT_URIS')]
             }
         },
         scopes=SCOPES
@@ -495,7 +495,7 @@ def gmail():
     if not messages:
         output.append('<p>No messages found.</p>')
     else:
-        for message in messages[:50]:  # Fetch only the first 50 messages
+        for message in messages[:5]:  # Fetch only the first 50 messages
             msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
             headers = msg['payload']['headers']
             
@@ -561,5 +561,4 @@ def gmail():
 
 if __name__ == '__main__':
     app.run(os.getenv('HOST'),os.getenv('PORT'), debug=True)
-
 
