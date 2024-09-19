@@ -404,8 +404,8 @@ def login():
     )
     
     # Redirect URI (must match the one in Google Cloud Console)
-    flow.redirect_uri = url_for('callback', _external=True)
-
+    # flow.redirect_uri = url_for('callback', _external=True)
+    flow.redirect_uri='https://emailextractor.onrender.com/callback'
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true')
@@ -434,8 +434,8 @@ def callback():
         },
         scopes=SCOPES
     )
-    flow.redirect_uri = url_for('callback', _external=True)
-
+    # flow.redirect_uri = url_for('callback', _external=True)
+    flow.redirect_uri='https://emailextractor.onrender.com/callback'
     # Exchange the authorization code for credentials
     authorization_response = request.url
     flow.fetch_token(authorization_response=authorization_response)
