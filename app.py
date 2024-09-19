@@ -270,6 +270,8 @@ import base64
 from dotenv import load_dotenv
 
 # Set up Flask application
+
+
 app = Flask(__name__)
 
 # Load environment variables from .env file
@@ -510,8 +512,6 @@ def gmail():
                     receiver = header['value']
                 if header['name'] == 'Subject':
                     subject = header['value']
-            
-            # Extract body (consider both plain text and HTML)
             body_data = ''
             if 'parts' in msg['payload']:
                 for part in msg['payload']['parts']:
