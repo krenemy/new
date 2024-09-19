@@ -270,7 +270,7 @@ import base64
 from dotenv import load_dotenv
 
 # Set up Flask application
-
+os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
 app = Flask(__name__)
 
 # Load environment variables from .env file
