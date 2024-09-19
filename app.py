@@ -436,10 +436,12 @@ def callback():
     )
     # flow.redirect_uri = url_for('callback', _external=True)
     flow.redirect_uri='https://emailextractor.onrender.com/callback'
+    print(flow.redirect_uri)
     # Exchange the authorization code for credentials
     authorization_response = request.url
+    print('fetching token')
     flow.fetch_token(authorization_response=authorization_response)
-
+    print("token fetched")
     # Save the credentials in session
     credentials = flow.credentials
     session['credentials'] = {
