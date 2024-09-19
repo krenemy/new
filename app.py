@@ -271,7 +271,6 @@ from dotenv import load_dotenv
 
 # Set up Flask application
 
-
 app = Flask(__name__)
 
 # Load environment variables from .env file
