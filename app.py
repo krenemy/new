@@ -429,7 +429,7 @@ def callback():
                 "token_uri": os.getenv('TOKEN_URI'),
                 "auth_provider_x509_cert_url": os.getenv('AUTH_PROVIDER_X509_CERT_URL'),
                 "client_secret": os.getenv('GOOGLE_CLIENT_SECRET'),
-                "redirect_uris": [os.getenv('REDIRECT_URIS')]
+                "redirect_uri": [os.getenv('REDIRECT_URIS')]
             }
         },
         scopes=SCOPES
