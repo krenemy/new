@@ -397,15 +397,15 @@ def login():
                 "token_uri": os.getenv('TOKEN_URI'),
                 "auth_provider_x509_cert_url": os.getenv('AUTH_PROVIDER_X509_CERT_URL'),
                 "client_secret": os.getenv('GOOGLE_CLIENT_SECRET'),
-                "redirect_uri": [os.getenv('REDIRECT_URIS')]
+                "redirect_uris": [os.getenv('REDIRECT_URIS')]
             }
         },
         scopes=SCOPES
     )
     
     # Redirect URI (must match the one in Google Cloud Console)
-    # flow.redirect_uri = url_for('callback', _external=True)
-    flow.redirect_uri='https://emailextractor.onrender.com/callback'
+    flow.redirect_uri = url_for('callback', _external=True)
+    # flow.redirect_uri='https://emailextractor.onrender.com/callback'
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true')
@@ -429,13 +429,13 @@ def callback():
                 "token_uri": os.getenv('TOKEN_URI'),
                 "auth_provider_x509_cert_url": os.getenv('AUTH_PROVIDER_X509_CERT_URL'),
                 "client_secret": os.getenv('GOOGLE_CLIENT_SECRET'),
-                "redirect_uri": [os.getenv('REDIRECT_URIS')]
+                "redirect_uris": [os.getenv('REDIRECT_URIS')]
             }
         },
         scopes=SCOPES
     )
-    # flow.redirect_uri = url_for('callback', _external=True)
-    flow.redirect_uri='https://emailextractor.onrender.com/callback'
+    flow.redirect_uri = url_for('callback', _external=True)
+    # flow.redirect_uri='https://emailextractor.onrender.com/callback'
     print(flow.redirect_uri)
     # Exchange the authorization code for credentials
     authorization_response = request.url
