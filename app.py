@@ -472,8 +472,6 @@ def get_body_from_message(message):
         return base64.urlsafe_b64decode(message['payload']['body']['data']).decode('utf-8')
 
     return None  # If no body is found
-
-@app.route('/gmail')
 @app.route('/gmail')
 def gmail():
     # Check if the user is authenticated
@@ -488,60 +486,79 @@ def gmail():
     gmail_service = googleapiclient.discovery.build(
         'gmail', 'v1', credentials=credentials)
 
-    try:
-        # Fetch the user's Gmail messages
-        results = gmail_service.users().messages().list(userId='me').execute()
-        messages = results.get('messages', [])
-    except Exception as e:
-        return f'<p>Error fetching messages: {str(e)}</p>'
+    # Fetch the user's Gmail messages
+    results = gmail_service.users().messages().list(userId='me').execute()
+    messages = results.get('messages', [])
 
-    output = [f'{dark_theme_css}<div class="container"><h2>Your Gmail Messages</h2>']
+    output = []
     if not messages:
         output.append('<p>No messages found.</p>')
     else:
         for message in messages[:50]:  # Fetch only the first 50 messages
-            try:
-                msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-                headers = msg['payload']['headers']
-                
-                # Initialize variables for sender, receiver, subject, and body
-                sender = receiver = subject = ''
-                
-                # Extract headers
-                for header in headers:
-                    if header['name'] == 'From':
-                        sender = header['value']
-                    if header['name'] == 'To':
-                        receiver = header['value']
-                    if header['name'] == 'Subject':
-                        subject = header['value']
-                
-                # Extract the body using the helper function
-                body = get_body_from_message(msg)
+            msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+            headers = msg['payload']['headers']
+            
+            # Initialize variables for sender, receiver, subject, and body
+            sender = receiver = subject = body = ''
+            has_attachment = False  # Flag to check if there are attachments
+            
+            # Extract headers
+            for header in headers:
+                if header['name'] == 'From':
+                    sender = header['value']
+                if header['name'] == 'To':
+                    receiver = header['value']
+                if header['name'] == 'Subject':
+                    subject = header['value']
+            
+            # Extract body (consider both plain text and HTML)
+            body_data = ''
+            if 'parts' in msg['payload']:
+                for part in msg['payload']['parts']:
+                    if part['mimeType'] == 'text/plain':
+                        body_data += part['body']['data']
+                    elif part['mimeType'] == 'text/html' and not body_data:
+                        body_data += part['body']['data']
+            else:
+                body_data = msg['payload']['body']['data']
 
-                # Check for attachments
-                attachments = []
-                if 'parts' in msg['payload']:
-                    for part in msg['payload']['parts']:
-                        if part.get('filename'):
-                            attachments.append(part['mimeType'])
+            # Decode body if it's Base64 encoded
+            body = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
-                # Append extracted details in the required format
-                output.append(f'''
-                    <div class="message">
-                        <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
-                        <div class="header">Receiver:</div> <div class="wh">{receiver}</div><br>
-                        <div class="header">Subject:</div> <div class="wh">{subject}</div><br>
-                        <div class="header">Body:</div> <div class="wh">{body or "No body content available"}</div><br>
-                        {'<div class="header">Attachments:</div>' + '<div style="color: white;">' + (', '.join(attachments) if attachments else '') + '</div>'}
-                    </div>
-                ''')
-            except Exception as e:
-                output.append(f'<p>Error processing message: {str(e)}</p>')
+            # Check for attachments and download them
+            if 'parts' in msg['payload']:
+                for part in msg['payload']['parts']:
+                    if part['filename']:  # If filename exists, it's an attachment
+                        has_attachment = True
+                        attachment_id = part['body']['attachmentId']
+                        attachment = gmail_service.users().messages().attachments().get(
+                            userId='me', messageId=message['id'], id=attachment_id).execute()
+                        
+                        data = base64.urlsafe_b64decode(attachment['data'])
+                        
+                        # Define the path to save the attachment (desktop folder)
+                        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop', 'gmail_attachments')
+                        if not os.path.exists(desktop_path):
+                            os.makedirs(desktop_path)
+                        
+                        file_path = os.path.join(desktop_path, part['filename'])
+                        with open(file_path, 'wb') as f:
+                            f.write(data)
 
-    output.append('</div>')
+            # Append extracted details in the required format
+            output.append(f'''
+                <div class="message">
+                    <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
+                    <div class="header">Receiver:</div> <div class="wh">{receiver}<div><br>
+                    <div class="header">Subject:</div> <div class="wh">{subject}<div><br>
+                    <div class="header">Body:</div> 
+                    <p>{body}</p>
+                    {f'<div class="attachment">Attachment saved: {part["filename"]}</div>' if has_attachment else ''}
+                </div>
+            ''')
+
+    output.append('</div><div class="footer">End of Messages</div>')
     return ''.join(output)
-
 
 if __name__ == '__main__':
     app.run(os.getenv('HOST'),os.getenv('PORT'), debug=True)
