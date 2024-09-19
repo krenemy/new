@@ -497,7 +497,7 @@ def gmail():
     if not messages:
         output.append('<p>No messages found.</p>')
     else:
-        for message in messages[:5]:  # Fetch only the first 50 messages
+        for message in messages[:5]:  # Fetch only the first 5 messages
             msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
             headers = msg['payload']['headers']
             
@@ -513,6 +513,7 @@ def gmail():
                     receiver = header['value']
                 if header['name'] == 'Subject':
                     subject = header['value']
+                    
             body_data = ''
             if 'parts' in msg['payload']:
                 for part in msg['payload']['parts']:
@@ -546,21 +547,22 @@ def gmail():
                         with open(file_path, 'wb') as f:
                             f.write(data)
 
-            # Append extracted details in the required format
-            output.append(f'''
-                <div class="message">
-                    <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
-                    <div class="header">Receiver:</div> <div class="wh">{receiver}<div><br>
-                    <div class="header">Subject:</div> <div class="wh">{subject}<div><br>
-                    <div class="header">Body:</div> 
-                    <p>{body}</p>
-                    {f'<div class="attachment">Attachment saved: {part["filename"]}</div>' if has_attachment else ''}
-                </div>
-            ''')
+            # Filter emails that contain "Purchase Orders" in subject or body
+            if "Purchase Orders" in subject or "Purchase Orders" in body:
+                # Append extracted details in the required format
+                output.append(f'''
+                    <div class="message">
+                        <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
+                        <div class="header">Receiver:</div> <div class="wh">{receiver}<div><br>
+                        <div class="header">Subject:</div> <div class="wh">{subject}<div><br>
+                        <div class="header">Body:</div> 
+                        <p>{body}</p>
+                        {f'<div class="attachment">Attachment saved: {part["filename"]}</div>' if has_attachment else ''}
+                    </div>
+                ''')
 
     output.append('</div><div class="footer">End of Messages</div>')
     return ''.join(output)
-
 if __name__ == '__main__':
     app.run(os.getenv('HOST'),os.getenv('PORT'), debug=True)
 
