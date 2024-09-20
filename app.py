@@ -270,7 +270,7 @@ import base64
 from dotenv import load_dotenv
 
 # Set up Flask application
-os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 app = Flask(__name__)
 
 # Load environment variables from .env file
@@ -497,7 +497,7 @@ def gmail():
     if not messages:
         output.append('<p>No messages found.</p>')
     else:
-        for message in messages[:5]:  # Fetch only the first 5 messages
+        for message in messages[:1]:  # Fetch only the first 5 messages
             msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
             headers = msg['payload']['headers']
             
@@ -513,7 +513,7 @@ def gmail():
                     receiver = header['value']
                 if header['name'] == 'Subject':
                     subject = header['value']
-                    
+            # print(msg)
             body_data = ''
             if 'parts' in msg['payload']:
                 for part in msg['payload']['parts']:
@@ -525,7 +525,8 @@ def gmail():
                 body_data = msg['payload']['body']['data']
 
             # Decode body if it's Base64 encoded
-            body = base64.urlsafe_b64decode(body_data).decode('utf-8')
+            if body_data:
+                body = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
             # Check for attachments and download them
             if 'parts' in msg['payload']:
@@ -547,7 +548,7 @@ def gmail():
                         with open(file_path, 'wb') as f:
                             f.write(data)
 
-            # Filter emails that contain "Purchase Orders" in subject or body
+            # Filter emails that contain "Purchase Orders" in the subject or body
             if "Purchase Orders" in subject or "Purchase Orders" in body:
                 # Append extracted details in the required format
                 output.append(f'''
@@ -563,6 +564,10 @@ def gmail():
 
     output.append('</div><div class="footer">End of Messages</div>')
     return ''.join(output)
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 if __name__ == '__main__':
     app.run(os.getenv('HOST'),os.getenv('PORT'), debug=True)
 
