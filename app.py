@@ -475,6 +475,104 @@ def get_body_from_message(message):
         return base64.urlsafe_b64decode(message['payload']['body']['data']).decode('utf-8')
 
     return None  # If no body is found
+# @app.route('/gmail')
+# def gmail():
+#     # Check if the user is authenticated
+#     if 'credentials' not in session:
+#         return redirect('login')
+
+#     # Load credentials from the session
+#     credentials = google.oauth2.credentials.Credentials(
+#         **session['credentials'])
+
+#     # Build the Gmail API service
+#     gmail_service = googleapiclient.discovery.build(
+#         'gmail', 'v1', credentials=credentials)
+
+#     # Fetch the user's Gmail messages
+#     results = gmail_service.users().messages().list(userId='me').execute()
+#     messages = results.get('messages', [])
+
+#     output = []
+#     if not messages:
+#         output.append('<p>No messages found.</p>')
+#     else:
+#         for message in messages[:1]:  # Fetch only the first 5 messages
+#             msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+#             headers = msg['payload']['headers']
+            
+#             # Initialize variables for sender, receiver, subject, and body
+#             sender = receiver = subject = body = ''
+#             has_attachment = False  # Flag to check if there are attachments
+            
+#             # Extract headers
+#             for header in headers:
+#                 if header['name'] == 'From':
+#                     sender = header['value']
+#                 if header['name'] == 'To':
+#                     receiver = header['value']
+#                 if header['name'] == 'Subject':
+#                     subject = header['value']
+#             # print(msg)
+#             body_data = ''
+#             if 'parts' in msg['payload']:
+#                 for part in msg['payload']['parts']:
+#                     # Debug: Print the mimeType to verify the part
+#                     print(f"Part MIME Type: {part['mimeType']}")
+#                     if part['mimeType'] == 'text/plain':
+#                         body_data += part['body'].get('data', '')
+#                     elif part['mimeType'] == 'text/html' and not body_data:
+#                         body_data += part['body'].get('data', '')
+#             else:
+#                 body_data = msg['payload']['body'].get('data', '')
+
+#             # Debug: Check if body_data exists and print
+#             if body_data:
+#                 print(f"Encoded Body Data: {body_data[:100]}")  # Print first 100 chars for brevity
+
+#                 # Decode body if it's Base64 encoded
+#             if body_data:
+#                 body = base64.urlsafe_b64decode(body_data).decode('utf-8')
+#                 print(f"Decoded Body: {body[:100]}")  # Print first 100 chars for brevity
+#             else:
+#                 print("No body data found")
+#             # Check for attachments and download them
+#             if 'parts' in msg['payload']:
+#                 for part in msg['payload']['parts']:
+#                     if part['filename']:  # If filename exists, it's an attachment
+#                         has_attachment = True
+#                         attachment_id = part['body']['attachmentId']
+#                         attachment = gmail_service.users().messages().attachments().get(
+#                             userId='me', messageId=message['id'], id=attachment_id).execute()
+                        
+#                         data = base64.urlsafe_b64decode(attachment['data'])
+                        
+#                         # Define the path to save the attachment (desktop folder)
+#                         desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop', 'gmail_attachments')
+#                         if not os.path.exists(desktop_path):
+#                             os.makedirs(desktop_path)
+                        
+#                         file_path = os.path.join(desktop_path, part['filename'])
+#                         with open(file_path, 'wb') as f:
+#                             f.write(data)
+
+#             # Filter emails that contain "Purchase Orders" in the subject or body
+#             if "Purchase Orders" in subject or "Purchase Orders" in body:
+#                 # Append extracted details in the required format
+#                 output.append(f'''
+#                     <div class="message">
+#                         <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
+#                         <div class="header">Receiver:</div> <div class="wh">{receiver}<div><br>
+#                         <div class="header">Subject:</div> <div class="wh">{subject}<div><br>
+#                         <div class="">Body:</div> 
+#                         <p>{body}</p>
+#                         {f'<div class="attachment">Attachment saved: {part["filename"]}</div>' if has_attachment else ''}
+#                     </div>
+#                 ''')
+
+#     output.append('</div><div class="footer">End of Messages</div>')
+#     return ''.join(output)
+
 @app.route('/gmail')
 def gmail():
     # Check if the user is authenticated
@@ -489,15 +587,15 @@ def gmail():
     gmail_service = googleapiclient.discovery.build(
         'gmail', 'v1', credentials=credentials)
 
-    # Fetch the user's Gmail messages
-    results = gmail_service.users().messages().list(userId='me').execute()
+    # Fetch the user's Gmail messages (max 30)
+    results = gmail_service.users().messages().list(userId='me', maxResults=30).execute()
     messages = results.get('messages', [])
 
     output = []
     if not messages:
         output.append('<p>No messages found.</p>')
     else:
-        for message in messages[:1]:  # Fetch only the first 5 messages
+        for message in messages:  # Fetch all 30 messages
             msg = gmail_service.users().messages().get(userId='me', id=message['id'], format='full').execute()
             headers = msg['payload']['headers']
             
@@ -513,18 +611,17 @@ def gmail():
                     receiver = header['value']
                 if header['name'] == 'Subject':
                     subject = header['value']
-            # print(msg)
+
             body_data = ''
             if 'parts' in msg['payload']:
                 for part in msg['payload']['parts']:
                     if part['mimeType'] == 'text/plain':
-                        body_data += part['body']['data']
+                        body_data += part['body'].get('data', '')
                     elif part['mimeType'] == 'text/html' and not body_data:
-                        body_data += part['body']['data']
+                        body_data += part['body'].get('data', '')
             else:
-                body_data = msg['payload']['body']['data']
+                body_data = msg['payload']['body'].get('data', '')
 
-            # Decode body if it's Base64 encoded
             if body_data:
                 body = base64.urlsafe_b64decode(body_data).decode('utf-8')
 
@@ -556,7 +653,7 @@ def gmail():
                         <div class="header">Sender:</div> <div class="wh">{sender}</div><br>
                         <div class="header">Receiver:</div> <div class="wh">{receiver}<div><br>
                         <div class="header">Subject:</div> <div class="wh">{subject}<div><br>
-                        <div class="header">Body:</div> 
+                        <div class="">Body:</div> 
                         <p>{body}</p>
                         {f'<div class="attachment">Attachment saved: {part["filename"]}</div>' if has_attachment else ''}
                     </div>
@@ -564,6 +661,8 @@ def gmail():
 
     output.append('</div><div class="footer">End of Messages</div>')
     return ''.join(output)
+
+
 @app.route('/logout')
 def logout():
     session.clear()
