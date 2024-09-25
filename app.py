@@ -226,7 +226,8 @@ def get_body_from_message(message):
 
     return None  # If no body is found
 
-client = OpenAI(api_key=os.getenv('OPEN_AI_KEY'))
+key=os.getenv('OPEN_AI_KEY')
+client = OpenAI(api_key=key)
 def ocr_image_to_text(image_path):
     """
     Perform OCR on a JPEG file to extract text.
